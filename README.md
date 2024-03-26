@@ -57,5 +57,14 @@ EOF
 
 oc create -f quarkus-pipelines.yml
 ```
+Choose to start the deploy-coolstore-prereqs pipeline.
+![image](https://github.com/jmontleon/quarkus-coolstore-pipeline/assets/1850500/b86fb33e-99c0-4136-a48d-3baba54c6331)
 
+Change any desired options, start, and wait for it to finish. 
+![image](https://github.com/jmontleon/quarkus-coolstore-pipeline/assets/1850500/14c0d99a-c297-4b54-bdb3-246ba1d07ebd)
 
+Choose to start the deploy-coolstore pipeline.
+![image](https://github.com/jmontleon/quarkus-coolstore-pipeline/assets/1850500/4344f597-fc6d-4be5-87d0-9272b5c26ecb)
+
+Change the `shared` workspace to use a VolumeClaimTemplate, change any desired options, start, and wait for it to finish
+![image](https://github.com/jmontleon/quarkus-coolstore-pipeline/assets/1850500/c42ed892-525f-4db3-ad7a-17b38cddeba0)
