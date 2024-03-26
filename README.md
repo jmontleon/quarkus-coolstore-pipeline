@@ -71,7 +71,7 @@ spec:
     emptyDir: {}
 EOF
 
-until oc get pipelinerun deploy-coolstore-prereqs | grep Succeeded; oc get pipelinerun deploy-coolstore-prereqs; do sleep 1; done
+until oc get pipelinerun deploy-coolstore-prereqs | grep Succeeded; do oc get pipelinerun deploy-coolstore-prereqs; sleep 1; done
 
 cat << EOF | oc create -f -
 apiVersion: tekton.dev/v1
