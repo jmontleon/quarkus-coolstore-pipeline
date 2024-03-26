@@ -35,7 +35,74 @@ oc create -f quarkus-pipelines.yml
 1. A route will be create and your coolstore instance will be available at https://coolstore-$namspace.apps.$cluster.$domain
 1. Quarkus is configured with the user `cooluser` / `c00lp@ss` unless you change the corresponding `COOLSTORE_USER` and `COOLSTORE_PASS` parameters.
 
-## Example:
+## CLI Example:
+```
+export QUARKUS_NS=foo
+
+oc new-project $QUARKUS_NS
+
+oc adm policy add-scc-to-user anyuid system:serviceaccount:$QUARKUS_NS:rabbitmq-server
+
+cat << EOF | oc create -f -
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  generateName: coolstore-
+  namespace: $QUARKUS_NS
+spec:
+  targetNamespaces:
+  - $QUARKUS_NS
+  upgradeStrategy: Default
+EOF
+
+oc create -f quarkus-pipelines.yml
+
+cat << EOF | oc create -f -
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: deploy-coolstore-prereqs
+  namespace: $QUARKUS_NS
+spec:
+  pipelineRef:
+    name: deploy-coolstore-prereqs
+EOF
+
+until oc get pipelinerun deploy-coolstore-prereqs | grep Succeeded; do sleep 1; done
+
+cat << EOF | oc create -f -
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: deploy-coolstore-wpoj0o
+  namespace: $QUARKUS_NS
+spec:
+  params:
+  - name: GIT_REPO
+    value: https://github.com/jmontleon/eap-coolstore-monolith
+  - name: GIT_REVISION
+    value: quarkus-migration
+  workspaces:
+  - name: shared
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: gp3-csi
+        volumeMode: Filesystem
+      status: {}
+EOF
+
+until oc get pipelinerun deploy-coolstore | grep Succeeded; do sleep 1; done
+
+```
+
+## Graphical Example:
 ```
 export QUARKUS_NS=foo
 
