@@ -66,15 +66,18 @@ metadata:
 spec:
   pipelineRef:
     name: deploy-coolstore-prereqs
+  workspaces:
+  - name: shared
+    emptyDir: {}
 EOF
 
-until oc get pipelinerun deploy-coolstore-prereqs | grep Succeeded; do sleep 1; done
+until oc get pipelinerun deploy-coolstore-prereqs | grep Succeeded; oc get pipelinerun deploy-coolstore-prereqs; do sleep 1; done
 
 cat << EOF | oc create -f -
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: deploy-coolstore-wpoj0o
+  name: deploy-coolstore
   namespace: $QUARKUS_NS
 spec:
   params:
@@ -82,6 +85,8 @@ spec:
     value: https://github.com/jmontleon/eap-coolstore-monolith
   - name: GIT_REVISION
     value: quarkus-migration
+  pipelineRef:
+    name: deploy-coolstore
   workspaces:
   - name: shared
     volumeClaimTemplate:
@@ -98,7 +103,7 @@ spec:
       status: {}
 EOF
 
-until oc get pipelinerun deploy-coolstore | grep Succeeded; do sleep 1; done
+until oc get pipelinerun deploy-coolstore | grep Succeeded; do oc get pipelinerun deploy-coolstore; sleep 1; done
 
 ```
 
