@@ -31,6 +31,6 @@ oc create -f quarkus-pipelines.yml
 
 # Use
 1. Run the deploy-coolstore-prereqs pipeline. You can accept the default options
-1. Run the deploy-coolstore pipeline. You should should a volumeClaimTemplate for the workspace. You may want to change the repo and branch to whatever you're working on. You can rerun this pipeline as many times as you want to redeploy the app.
+1. Run the deploy-coolstore pipeline. You should select volumeClaimTemplate for the workspace. No additional configuration is necessary. You may want to change the repo and branch to whatever you're working on. You can rerun this pipeline as many times as you want to redeploy the app. The deployconfig has an image trigger so it will restart automatically when the new image build is pushed.
 1. A route will be create and your coolstore instance will be available at https://coolstore-$namspace.apps.$cluster.$domain
-1. Quarkus is configured with the user `cooluser` / `c00lp@ss`.
+1. Quarkus is configured with the user `cooluser` / `c00lp@ss` unless you change the corresponding `COOLSTORE_USER` and `COOLSTORE_PASS` parameters.
