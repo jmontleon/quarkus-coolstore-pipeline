@@ -1769,7 +1769,6 @@ spec:
              amqp-password=$(oc extract secret/rabbitmq-default-user --keys password --to=- 2>&1 | grep -v ^#)
              amqp-host=rabbitmq
              amqp-port=5672
-             quarkus.log.level=FINEST
              quarkus.http.cors=true
              quarkus.http.cors.origins=http://localhost:8080,https://$(oc get route coolstore -o go-template='{{ .spec.host }}'),https://$(oc get route -l app=keycloak -o go-template='{{ (index .items 0).spec.host }}'),http://$(oc get route coolstore -o go-template='{{ .spec.host }}')
              quarkus.datasource.db-kind=postgresql
