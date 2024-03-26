@@ -5,18 +5,24 @@ metadata:
  name: deploy-coolstore-prereqs
 spec:
   params:
-  - name: GIT_REPO
+  - name: COOLSTORE_USER
     type: string
-    default: "https://github.com/jmontleon/eap-coolstore-monolith"
-  - name: GIT_REVISION
+    default: "cooluser"
+  - name: COOLSTORE_PASS
     type: string
-    default: quarkus-migration
-  - name: IMAGE_NAME
+    default: "c00lp@ss"
+  - name: COOLSTORE_DB_USER
     type: string
-    default: "quarkus-coolstore"
-  - name: IMAGE_REGISTRY
+    default: cool
+  - name: COOLSTORE_DB_PASS
     type: string
-    default: "image-registry.openshift-image-registry.svc:5000"
+    default: cooldbpass
+  - name: KEYCLOAK_DB_USER
+    type: string
+    default: keycloak
+  - name: KEYCLOAK_DB_PASS
+    type: string
+    default: keycloakdbpass
   workspaces:
   - name: shared
 
@@ -29,19 +35,11 @@ spec:
     params:
     - name: SCRIPT
       value: |
-             oc -n $(context.pipelineRun.namespace) new-app --name postgres-kc --template postgresql-persistent -p POSTGRESQL_USER=admin -p POSTGRESQL_PASSWORD=keycloak -p POSTGRESQL_DATABASE=keycloak -p DATABASE_SERVICE_NAME=postgres-kc
-             oc -n $(context.pipelineRun.namespace) new-app --name postgres --template postgresql-persistent -p POSTGRESQL_USER=cool -p POSTGRESQL_PASSWORD=cooldb -p POSTGRESQL_DATABASE=coolstore -p DATABASE_SERVICE_NAME=postgres
+             oc -n $(context.pipelineRun.namespace) new-app --name postgres-kc --template postgresql-persistent -p POSTGRESQL_USER=$(params.KEYCLOAK_DB_USER) -p POSTGRESQL_PASSWORD=$(params.KEYCLOAK_DB_PASS) -p POSTGRESQL_DATABASE=keycloak -p DATABASE_SERVICE_NAME=postgres-kc
+             oc -n $(context.pipelineRun.namespace) new-app --name postgres --template postgresql-persistent -p POSTGRESQL_USER=$(params.COOLSTORE_DB_USER) -p POSTGRESQL_PASSWORD=$(params.COOLSTORE_DB_PASS) -p POSTGRESQL_DATABASE=coolstore -p DATABASE_SERVICE_NAME=postgres
+             openssl req -subj '/CN=keycloak/O=Test Keycloak/C=US' -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem
+             oc -n $(context.pipelineRun.namespace) create secret tls keycloak-tls --cert=cert.pem --key=key.pem
              cat << EOF | oc create -f -
-             ---
-             apiVersion: v1
-             data:
-               tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURmVENDQW1XZ0F3SUJBZ0lVT2Zxa3BWc2d3TzhIOW5hVncvOUlzUjhaYkFjd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1RqRW1NQ1FHQTFVRUF3d2RZWEJ3Y3k0dVlXa3ViV2xuY21GMGFXOXVMbkpsWkdoaGRDNWpiMjB4RnpBVgpCZ05WQkFvTURsUmxjM1FnUzJWNVkyeHZZV3N1TVFzd0NRWURWUVFHRXdKVlV6QWVGdzB5TkRBek1qQXhOVE01Ck1EZGFGdzB5TlRBek1qQXhOVE01TURkYU1FNHhKakFrQmdOVkJBTU1IV0Z3Y0hNdUxtRnBMbTFwWjNKaGRHbHYKYmk1eVpXUm9ZWFF1WTI5dE1SY3dGUVlEVlFRS0RBNVVaWE4wSUV0bGVXTnNiMkZyTGpFTE1Ba0dBMVVFQmhNQwpWVk13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRREdhZXQralluaTBUZ2ZjUHBuCjZIcnB3TDh0Q3pqbUY2RlRwZ1BGNDk2VnlBWVcwcWJGeXZqeW10eHRkREF6d1NJTmtITUVwOXJEdjZVRjJ4d2IKQVd0Sk5aNnBmKzRPUFNQdzlBQzl1VUxNVkhzaTRVU0VPY2x6ZTdIdXZkaWVKSUNvTzgwRmdKa2NTbC9NR0tXZQpqMnpnbGhSOVRlNHRDV3R0cklvdmtVa2VGZFhXNVZTZ3hQUTZ1b25FV3hvRXZCbVRmZDAwQllhWGlyanJOOGJJCmEzQU1NNGpFUXYwMDU4dHJWZFdESy9jM2E5Mnl0Njlwa1p2OHhxYzhvL0RZNXVPdXROSlZKdlJTUkM5OEhETUcKRlpCdzlVeklxU01WQ1hHOWl2V3VJL2UvZWVJSnVSZE9VdWFEbXhtUGxWcUtzZ0dKay9oeWZobUt2ZVpvbEhCQwpxSjI1QWdNQkFBR2pVekJSTUIwR0ExVWREZ1FXQkJRWlJia0xpN3RlMzVkdnNreU5vSjMxUEp4THB6QWZCZ05WCkhTTUVHREFXZ0JRWlJia0xpN3RlMzVkdnNreU5vSjMxUEp4THB6QVBCZ05WSFJNQkFmOEVCVEFEQVFIL01BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJwNDgzRzVrcnh1TTlkM2U5a1A5cjZxTHZVQThieW1FakdMSnNLcnFGRQprSTNuZ0dwd014a3Bua0Y0ZUJJblNRWnlJWVFVR0VDck5yVUxHWTVpck82Y2lrdEVYaDFaRXpQZEVCM2xGTVY0Ck9xdkdSbE9WUzlZODZtSFkrRkVZSWFZNmZzVTJvNjgwNUVuYzVLbExueWh6U0NHeG5NQ0o0L1YxWkVtajk1dkIKa0RMU3JEVjZ6eEhRSjI3Rmp3OGJrSTd3SjZGb1Q4ZFVZYW42UkxVK3lYSDBqOExJYldTbXpCSVN3Qk9naXY5TApab3ZpVDFheFpJcGxnTC9aWHpkV2xUWHlzYzZLeDJxTFlETFpIb2kyYkR2cFlQeitkRXpPV29oTmxmb0ZBa0JIClVXcnI5ZGp1NVhmeDYwODg1ckVhQWNFWXBCQ3VYcGdjTEZ4WG1RbmUyL2NOCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
-               tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2d0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktrd2dnU2xBZ0VBQW9JQkFRREdhZXQralluaTBUZ2YKY1BwbjZIcnB3TDh0Q3pqbUY2RlRwZ1BGNDk2VnlBWVcwcWJGeXZqeW10eHRkREF6d1NJTmtITUVwOXJEdjZVRgoyeHdiQVd0Sk5aNnBmKzRPUFNQdzlBQzl1VUxNVkhzaTRVU0VPY2x6ZTdIdXZkaWVKSUNvTzgwRmdKa2NTbC9NCkdLV2VqMnpnbGhSOVRlNHRDV3R0cklvdmtVa2VGZFhXNVZTZ3hQUTZ1b25FV3hvRXZCbVRmZDAwQllhWGlyanIKTjhiSWEzQU1NNGpFUXYwMDU4dHJWZFdESy9jM2E5Mnl0Njlwa1p2OHhxYzhvL0RZNXVPdXROSlZKdlJTUkM5OApIRE1HRlpCdzlVeklxU01WQ1hHOWl2V3VJL2UvZWVJSnVSZE9VdWFEbXhtUGxWcUtzZ0dKay9oeWZobUt2ZVpvCmxIQkNxSjI1QWdNQkFBRUNnZ0VBR0pXNlJOR1Q0c05xMFZhRjZJY2haOEptemRXRXBOb0x0dG9zd0lIMkxCZi8KVFNlbjIzMUZjSVlveHZVdEhkU1IvQjFJYXl6RFNocitmeVhCcTBUM1ByaUNvdDBEcWNjQW81UVFYWEhOcVpUVQpOeU96Z2pESTJlTGJUc28rUTRZaFhQY2Y5YzBUNjdINWdjZ1NDWDRiRHc3NWxmY29pbk1PMlNXV2I4TndUR1pQCkZpcEdZZTdxYlJGNW52OXAvNE9KSGZxa3YwQklDUDFmZ0pXTFJOODJqdDFCQWptcEs2aUZxRFRzSjk3bjdRVXUKM2l6T1U1cnZ3WFV1VkkxOUEzNk10RCtEcDVFS3lMQllsMFVoZllOQ3A5R3dheUh3b0wzUXI1OHM3dEpTOGtJZwpQTTg2dTJtVk8ySzh0UjNPWmlRVEJNRTVSdThidzd5N1JPN3VKVVpHUVFLQmdRRDVyakhwcktFdXE4NTZhYy9MCjhJcmc0WjQzc253cEx3alYrYTB4ZTB1Q1QxTFRzejh4MGZJeERPdmt2ZWR4L09RbTZJSFp0OUlZcldXaWtva28KWloraGQ2NGZFTTduQ3JxcTk4ZnV6eDZIcmZwRlkyRUhhMXIrV3dudGpmeUFMdUViUmZMMW14ZThKQW9EQmYwdAp2L2VvcUZLUXd4bUtVY2dscnowektYTDQwUUtCZ1FETGI0clAxK1pKVFdwOFVqeDE4ZGcwd1BNL2ZuSTdibXZWCnZGOXFCUmNlblhnSU11NDRBeDNwNmxIb0s3VHAvRCt1dlZ1NldWdnA0V2ZOaFFWZ0Zqclk1VkpsTFRiTUxEZHUKM3drcVUvblp0VFdBSklCL2szbEpMTEhvNW1oaWVNOE1EeDYvWG1NU1lqZEJFY3hsV1lXZHlKUlV0OEFtUjdhLwo1aTNUOEp1UWFRS0JnUUNSaW1MNTdYRC9QWkxjZEhWMlViOENtMEdaQWVleU1nS2FpREhXMkNJSjBhZGNVKzRRClltc2xBSDA1RnlHa3BsOXY5clJLYndaKzhBU0FvWjVsOStiM1BrWTNRWnI1dnAxVkw1NVJyRllGalBxSUhBZmgKUlVrRFg1b0g2VzQ0WWh0QnhLSjlYR3lYZFFLSkJLS3lXbVpJMytWUkVRa0FRZS9EVjhUNjM3eHZJUUtCZ1FDNApUSGpKQ3FMSnphU210Q21xQUVzS243SysxdUxPREo4TXB2Y1pxVHJrdFd2RW9iOUdaeXgyZVoxeVpBWWw1Q3dkCk5kY2YzMHh4ZVk3OGxZSGxKcjV4T0crSTBZbFBOcytSVmVXTHYwQWVoeGZNMjBTK1R2QVY1clBXZHNZaVQ2ZmoKR04rV0p3QkI2MUI3VnBDQlVMVEgyS3JvaFA5Q3JyMVU1RWFvTnRYMzRRS0JnUURUL2QvMUZjSG94ZVhHdkJJVgozL3dLcm1qVERXQmltcTlhbTAxc0VEVEVkUW1LM3ZLUnFMSUpKd2dyZThvS05WaHJUMGpza2xiR1E1dWd1MTRYCk4rMDUybGdIdG83TytzU3Mvcm05clBDV0NFRGtRaU4yckhhNVB4NW56WTBBaXFlVVUxUGY4SDdaMU4zM0U0SFQKdjlHQjNGdlRWSzNaRjY2VXFxQkNRd0t3MkE9PQotLS0tLUVORCBQUklWQVRFIEtFWS0tLS0tCg==
-             kind: Secret
-             metadata:
-               name: keycloak-tls
-               namespace: $(context.pipelineRun.namespace)
-             type: kubernetes.io/tls
              ---
              apiVersion: operators.coreos.com/v1alpha1
              kind: Subscription
@@ -1629,8 +1627,8 @@ spec:
              until curl -k --fail https://$(oc get route -l app=keycloak -o go-template='{{ (index .items 0).spec.host }}')/realms/quarkus; do sleep 1; done
              sleep 30
              until oc get pod keycloak-0; do sleep 1; done
-             oc exec -it keycloak-0 -- /opt/keycloak/bin/kcadm.sh create users --no-config --server http://localhost:8080 -r quarkus -s username=cooluser -s enabled=true -o --fields id,username --user admin --password $(oc extract secret/keycloak-initial-admin --keys password --to=- 2>&1 | grep -v ^#) --realm master     
-             oc exec -it keycloak-0 -- /opt/keycloak/bin/kcadm.sh set-password --no-config --server http://localhost:8080 -r quarkus --username cooluser --new-password c00lp@ss --user admin --password $(oc extract secret/keycloak-initial-admin --keys password --to=- 2>&1 | grep -v ^#) --realm master
+             oc exec -it keycloak-0 -- /opt/keycloak/bin/kcadm.sh create users --no-config --server http://localhost:8080 -r quarkus -s username=$(params.COOLSTORE_USER) -s enabled=true -o --fields id,username --user admin --password $(oc extract secret/keycloak-initial-admin --keys password --to=- 2>&1 | grep -v ^#) --realm master
+             oc exec -it keycloak-0 -- /opt/keycloak/bin/kcadm.sh set-password --no-config --server http://localhost:8080 -r quarkus --username $(params.COOLSTORE_USER) --new-password $(params.COOLSTORE_PASS) --user admin --password $(oc extract secret/keycloak-initial-admin --keys password --to=- 2>&1 | grep -v ^#) --realm master
     workspaces:
     - name: manifest-dir
       workspace: shared
@@ -1775,8 +1773,8 @@ spec:
              quarkus.http.cors=true
              quarkus.http.cors.origins=http://localhost:8080,https://$(oc get route coolstore -o go-template='{{ .spec.host }}'),https://$(oc get route -l app=keycloak -o go-template='{{ (index .items 0).spec.host }}'),http://$(oc get route coolstore -o go-template='{{ .spec.host }}')
              quarkus.datasource.db-kind=postgresql
-             quarkus.datasource.username=cool
-             quarkus.datasource.password=cooldb
+             quarkus.datasource.username=$(oc extract secret/postgres --keys database-user --to=- 2>&1 | grep -v ^#)
+             quarkus.datasource.password=$(oc extract secret/postgres --keys database-password --to=- 2>&1 | grep -v ^#)
              quarkus.datasource.jdbc.url=jdbc:postgresql://postgres:5432/coolstore
              %prod.quarkus.oidc.auth-server-url=https://$(oc get route -l app=keycloak -o go-template='{{ (index .items 0).spec.host }}')/realms/quarkus
              quarkus.oidc.client-id=coolstore
@@ -1807,7 +1805,7 @@ spec:
     params:
     - name: SCRIPT
       value: |
-             cat << EOF > src/main/resources/META-INF/resources/keycloak.json 
+             cat << EOF > src/main/resources/META-INF/resources/keycloak.json
              {
                "realm": "quarkus",
                "auth-server-url": "https://$(oc get route -l app=keycloak -o go-template='{{ (index .items 0).spec.host }}')/",
@@ -1859,7 +1857,7 @@ spec:
       value: "false"
     runAfter:
     - write-containerfile
-    workspaces:  
+    workspaces:
     - name: source
       workspace: shared
 
@@ -1875,7 +1873,7 @@ spec:
     params:
     - name: SCRIPT
       value: |
-             cat << EOF | oc create -f - ||: 
+             cat << EOF | oc create -f - ||:
              ---
              apiVersion: batch/v1
              kind: Job
