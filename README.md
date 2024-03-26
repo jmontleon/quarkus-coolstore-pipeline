@@ -104,7 +104,7 @@ spec:
 EOF
 
 until oc get pipelinerun deploy-coolstore | grep Succeeded; do oc get pipelinerun deploy-coolstore; sleep 1; done
-
+oc get route coolstore
 ```
 
 ## Graphical Example:
