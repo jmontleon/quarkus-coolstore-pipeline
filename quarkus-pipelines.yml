@@ -1804,6 +1804,7 @@ spec:
     params:
     - name: SCRIPT
       value: |
+             mkdir -p src/main/resources/META-INF/resources/
              cat << EOF > src/main/resources/META-INF/resources/keycloak.json
              {
                "realm": "quarkus",
