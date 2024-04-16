@@ -1701,10 +1701,10 @@ spec:
   params:
   - name: GIT_REPO
     type: string
-    default: "https://github.com/jmontleon/eap-coolstore-monolith"
+    default: "https://github.com/konveyor-ecosystem/coolstore.git"
   - name: GIT_REVISION
     type: string
-    default: quarkus-migration
+    default: quarkus
   - name: IMAGE_NAME
     type: string
     default: "quarkus-coolstore"
@@ -1784,8 +1784,8 @@ spec:
              quarkus.hibernate-orm.log.sql=false
              quarkus.hibernate-orm.log.format-sql=true
              quarkus.devservices.enabled=false
+             quarkus.rest-client.shipping-service-api.url=http://localhost:8080/services
              EOF
-             cat src/main/resources/application.properties
     runAfter:
     - fetch-repository
     workspaces:
